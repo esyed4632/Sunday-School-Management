@@ -1,1 +1,1 @@
-# WEIC
+# Sunday School Management
