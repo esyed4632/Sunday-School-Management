@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Attendance</title>
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:20px; }
+h1,h2 { background:#00695c; color:white; padding:10px; }
+.section { background:white; padding:15px; margin-bottom:20px; border-radius:5px; }
+select { padding:6px; margin-left:10px; }
+button { margin-top:10px; padding:8px 12px; background:#00695c; color:white; border:none; }
+.success { color:green; font-weight:bold; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<h1>Attendance</h1>
+<a href="/dashboard">⬅ Back to Dashboard</a>
+
+{% for level, kids in levels.items() %}
+<div class="section">
+<h2>{{ level }}</h2>
+
+{% if kids %}
+{% for kid in kids %}
+<div>
+<strong>{{ kid.name }}</strong>
+<select onchange="setAttendance('{{ level }}','{{ kid.name }}',this.value)">
+<option value="">Select</option>
+<option>Present</option>
+<option>Absent - Sick</option>
+<option>Absent - Travel</option>
+<option>Absent - Withdrawal</option>
+</select>
+</div>
+{% endfor %}
+
+<button onclick="saveAttendance('{{ level }}')">Save Attendance</button>
+<p class="success" id="msg-{{ level }}"></p>
+
+{% else %}
+<p>No students</p>
+{% endif %}
+</div>
+{% endfor %}
+
+<script>
+let attendance = {};
+
+function setAttendance(level, name, value){
+    if(!attendance[level]) attendance[level] = {};
+    attendance[level][name] = value;
+}
+
+function saveAttendance(level){
+    fetch("/attendance/save",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({
+            level: level,
+            records: attendance[level] || {}
+        })
+    })
+    .then(()=> {
+        document.getElementById("msg-"+level).textContent = "Saved!";
+        setTimeout(()=> {
+            document.getElementById("msg-"+level).textContent = "";
+        }, 3000);
+    });
+}
+</script>
+
+</body>
+</html>
