@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gradebook</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #2c3e50, #4ca1af);
+        margin: 0;
+        padding: 20px;
+        color: #333;
+    }
+    .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    h1 {
+        text-align: center;
+        color: #00695c;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+    }
+    th {
+        background: #00695c;
+        color: white;
+    }
+    .course-row {
+        display: none;
+        background: #f9f9f9;
+    }
+    .assignmentContainer input {
+        width: 60px;
+        margin-right: 5px;
+    }
+    button {
+        padding: 5px 10px;
+        margin-top: 5px;
+        background: #00695c;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #004d40;
+    }
+    .back {
+        display: inline-block;
+        margin-bottom: 15px;
+        text-decoration: none;
+        color: #00695c;
+        font-weight: bold;
+    }
+    .studentRow div {
+        font-size: 12px;
+        color: #666;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <a class="back" href="{{ url_for('dashboard') }}">⬅ Back to Dashboard</a>
+    <h1>Gradebook</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Student / Course</th>
+                <th>Assignments</th>
+            </tr>
+        </thead>
+        <tbody id="gradeTable">
+            {% for level, students in levels.items() %}
+                <tr><th colspan="2">{{ level }}</th></tr>
+                {% for student in students %}
+                    <tr class="studentRow" data-index="{{ loop.index0 }}">
+                        <td colspan="2" style="cursor:pointer; font-weight:bold;">
+                            {{ student.name }}
+                            <div>Click here to enter grades</div>
+                        </td>
+                    </tr>
+                    {% for course in ["Quran Reading","Quran Memorization","Quranic Arabic","Islamic Studies"] %}
+                        <tr class="course-row course-{{ loop.index0 }}">
+                            <td>{{ course }}</td>
+                            <td>
+                                <div class="assignmentContainer"></div>
+                                <button onclick="addAssignment(this)">Add Assignment</button>
+                                <div>Average: <span class="avg">-</span> | Letter: <span class="letter">-</span></div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function addAssignment(btn){
+    const container = btn.previousElementSibling;
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = 0;
+    input.max = 100;
+    input.placeholder = "Score";
+    input.oninput = calculateGrades;
+    container.appendChild(input);
+}
+
+function calculateGrades(){
+    document.querySelectorAll(".course-row").forEach(row=>{
+        const inputs = row.querySelectorAll(".assignmentContainer input");
+        let sum = 0;
+        inputs.forEach(inp => { sum += Number(inp.value) || 0; });
+        let avg = inputs.length ? (sum / inputs.length).toFixed(1) : "-";
+        row.querySelector(".avg").textContent = avg;
+
+        let letter = "-";
+        if(avg !== "-"){
+            avg = Number(avg);
+            if(avg >= 90) letter = "A";
+            else if(avg >= 80) letter = "B";
+            else if(avg >= 70) letter = "C";
+            else if(avg >= 60) letter = "D";
+            else letter = "F";
+        }
+        row.querySelector(".letter").textContent = letter;
+    });
+}
+
+// Toggle courses when student clicked
+document.querySelectorAll(".studentRow").forEach(row=>{
+    row.addEventListener("click", () => {
+        const idx = row.getAttribute("data-index");
+        const hint = row.querySelector("div");
+        if(hint) hint.style.display = "none";
+        document.querySelectorAll(`.course-${idx}`).forEach(cRow=>{
+            cRow.style.display = cRow.style.display === "table-row" ? "none" : "table-row";
+        });
+    });
+});
+</script>
+</body>
+</html>

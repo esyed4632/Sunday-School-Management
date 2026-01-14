@@ -5,26 +5,45 @@
 <title>WEIC Sunday School Registration 2025–26</title>
 <style>
 body { font-family: Arial; background: #f4f4f4; padding: 20px; }
-h1, h2 { background: #00695c; color: white; padding: 10px; }
+h1,h2 { background: #00695c; color: white; padding: 10px; }
 .section { background: white; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
 label { display: block; margin-top: 10px; }
 input, select { width: 100%; padding: 6px; margin-top: 4px; }
 button { margin-top: 20px; padding: 10px 15px; background: #00695c; color: white; border: none; cursor: pointer; }
 button:hover { background: #004d40; }
-#ageMessage { color:red; font-weight:bold; margin-top:5px; }
+.error { color:red; font-weight:bold; margin-top:5px; }
 #assignedLevel { margin-top:10px; font-weight:bold; color:#00695c; }
+
+/* Success message at bottom */
+#successMessage {
+    display: none;
+    padding: 12px;
+    margin-top: 20px;
+    background: #c8e6c9;
+    color: #256029;
+    font-weight: bold;
+    border: 1px solid #256029;
+    border-radius: 5px;
+    text-align: center;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
 </style>
 </head>
 <body>
 
 <h1>WEIC Sunday School Registration Form 2025–26</h1>
 
-<form id="registrationForm">
+<form id="registrationForm" novalidate>
 
 <div class="section">
 <h2>Child Information</h2>
 <label>Child Name *</label>
 <input type="text" id="childName" required>
+<p id="childNameError" class="error"></p>
 
 <label>Gender *</label>
 <select id="gender" required>
@@ -38,7 +57,8 @@ button:hover { background: #004d40; }
 
 <label>Age *</label>
 <input type="number" id="age" readonly required>
-<p id="ageMessage"></p>
+<p id="ageMessage" class="error"></p>
+<p id="assignedLevel"></p>
 
 <label>Allergies</label>
 <input type="text" id="allergies">
@@ -48,39 +68,49 @@ button:hover { background: #004d40; }
 <h2>Parent Information</h2>
 <label>Father's Name *</label>
 <input type="text" id="fatherName" required>
+<p id="fatherNameError" class="error"></p>
 
 <label>Mother's Name *</label>
 <input type="text" id="motherName" required>
+<p id="motherNameError" class="error"></p>
 
 <label>Mailing Address *</label>
 <input type="text" id="address" required>
 
 <label>Email Address *</label>
 <input type="email" id="email1" required>
+<p id="email1Error" class="error"></p>
 
 <label>Secondary Email</label>
 <input type="email" id="email2">
+<p id="email2Error" class="error"></p>
 
 <label>Father's Phone *</label>
-<input type="number" id="fatherPhone" required max="9999999999">
+<input type="text" id="fatherPhone" required placeholder="123-456-7890">
+<p id="fatherPhoneError" class="error"></p>
 
 <label>Mother's Phone *</label>
-<input type="number" id="motherPhone" required max="9999999999">
+<input type="text" id="motherPhone" required placeholder="123-456-7890">
+<p id="motherPhoneError" class="error"></p>
 </div>
 
 <div class="section">
 <h2>Emergency Contacts</h2>
 <label>Emergency Contact 1 Name *</label>
 <input type="text" id="emergency1Name" required>
+<p id="emergency1NameError" class="error"></p>
 
 <label>Emergency Contact 1 Phone *</label>
-<input type="number" id="emergency1Phone" required max="9999999999">
+<input type="text" id="emergency1Phone" required placeholder="123-456-7890">
+<p id="emergency1PhoneError" class="error"></p>
 
 <label>Emergency Contact 2 Name *</label>
 <input type="text" id="emergency2Name" required>
+<p id="emergency2NameError" class="error"></p>
 
 <label>Emergency Contact 2 Phone *</label>
-<input type="number" id="emergency2Phone" required max="9999999999">
+<input type="text" id="emergency2Phone" required placeholder="123-456-7890">
+<p id="emergency2PhoneError" class="error"></p>
 </div>
 
 <div class="section">
@@ -115,121 +145,94 @@ button:hover { background: #004d40; }
 
 <label>Electronic Signature *</label>
 <input type="text" id="signature" required>
+<p id="signatureError" class="error"></p>
 </div>
 
 <button type="submit">Submit Registration</button>
 </form>
 
-<p id="assignedLevel"></p>
+<div id="successMessage">Form successfully submitted!</div>
 
 <script>
-const form = document.getElementById("registrationForm");
+function isLetters(str){ return /^[A-Za-z\s]+$/.test(str); }
+function isPhone(num){ return /^\d{3}-\d{3}-\d{4}$/.test(num); }
+function isEmailValid(email){ return /^[^\s@]+@[^\s@]+\.(com|org|edu)$/.test(email); }
+
 const dobInput = document.getElementById("dob");
 const ageInput = document.getElementById("age");
 const ageMessage = document.getElementById("ageMessage");
 const assignedLevel = document.getElementById("assignedLevel");
-const submitButton = form.querySelector("button[type='submit']");
+const submitButton = document.querySelector("button[type='submit']");
+const successMessage = document.getElementById("successMessage");
 
-// Calculate level based on age
-function calculateLevel(age){
-    if(age===5) return "Level 1";
-    if(age===6) return "Level 2";
-    if(age===7) return "Level 3";
-    if(age===8) return "Level 4";
-    if(age===9) return "Level 5";
-    if(age===10) return "Level 6";
-    if(age===11) return "Level 7";
-    if(age===12) return "Level 8";
-    if(age===13) return "Level 9";
-    return null;
-}
+function calculateLevel(age){ return "Level " + (age - 4); }
 
-// Age calculation + inline message + level display
 dobInput.addEventListener("change", () => {
     const dob = new Date(dobInput.value);
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    if(monthDiff<0 || (monthDiff===0 && today.getDate()<dob.getDate())) age--;
+    if(today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate())) age--;
     ageInput.value = age;
 
-    if(age<5){
-        ageMessage.textContent = "Too Young — cannot apply";
-        assignedLevel.textContent = "";
-        submitButton.disabled = true;
-    } else if(age>13){
-        ageMessage.textContent = "Too Old — too late";
-        assignedLevel.textContent = "";
-        submitButton.disabled = true;
-    } else{
-        ageMessage.textContent = "";
-        const level = calculateLevel(age);
-        assignedLevel.textContent = "Assigned Level: "+level;
-        submitButton.disabled = false;
-    }
+    if(age < 5){ ageMessage.textContent="Too Young — cannot apply"; assignedLevel.textContent=""; submitButton.disabled=true; }
+    else if(age > 11){ ageMessage.textContent="Too Old — too late"; assignedLevel.textContent=""; submitButton.disabled=true; }
+    else{ ageMessage.textContent=""; assignedLevel.textContent="Assigned Level: "+calculateLevel(age); submitButton.disabled=false; }
 });
 
-// Limit phone numbers to 10 digits
+// Phone auto-format
 ["fatherPhone","motherPhone","emergency1Phone","emergency2Phone"].forEach(id=>{
-    document.getElementById(id).addEventListener("input", function(){
-        if(this.value.length>10) this.value=this.value.slice(0,10);
+    const el = document.getElementById(id);
+    el.addEventListener("input", e=>{
+        let val = el.value.replace(/\D/g,'');
+        if(val.length>3 && val.length<=6) val=val.slice(0,3)+"-"+val.slice(3);
+        else if(val.length>6) val=val.slice(0,3)+"-"+val.slice(3,6)+"-"+val.slice(6,10);
+        el.value = val;
     });
 });
 
-// Submit JSON
-form.addEventListener("submit", (e)=>{
+// Form submission
+document.getElementById("registrationForm").addEventListener("submit", e=>{
     e.preventDefault();
+    let valid = true;
 
-    const ageVal = parseInt(ageInput.value);
-    if(ageVal<5 || ageVal>13){
-        ageMessage.textContent="Cannot submit — age invalid";
-        return;
-    }
+    ["childName","fatherName","motherName","emergency1Name","emergency2Name","signature"].forEach(id=>{
+        const v=document.getElementById(id).value.trim();
+        const err=document.getElementById(id+"Error");
+        if(!isLetters(v)){ err.textContent="Please use letters only"; valid=false; } else err.textContent="";
+    });
 
-    const data = {
-        Children:[{ 
-            Name:String(document.getElementById("childName").value),
-            Age: ageVal,
-            Gender:String(document.getElementById("gender").value),
-            Allergies:String(document.getElementById("allergies").value)
-        }],
-        FatherName:String(document.getElementById("fatherName").value),
-        MotherName:String(document.getElementById("motherName").value),
-        Address:String(document.getElementById("address").value),
-        Email1:String(document.getElementById("email1").value),
-        Email2:String(document.getElementById("email2").value),
-        FatherPhone:parseInt(document.getElementById("fatherPhone").value),
-        MotherPhone:parseInt(document.getElementById("motherPhone").value),
-        Emergency1Name:String(document.getElementById("emergency1Name").value),
-        Emergency1Phone:parseInt(document.getElementById("emergency1Phone").value),
-        Emergency2Name:String(document.getElementById("emergency2Name").value),
-        Emergency2Phone:parseInt(document.getElementById("emergency2Phone").value),
-        PhotoConsent:String(document.getElementById("photoConsent").value),
-        PickupConsent:String(document.getElementById("pickupConsent").value),
-        Liability:String(document.getElementById("liability").value),
-        Scholarship:String(document.getElementById("scholarship").value),
-        Signature:String(document.getElementById("signature").value)
-    };
+    ["fatherPhone","motherPhone","emergency1Phone","emergency2Phone"].forEach(id=>{
+        const v=document.getElementById(id).value.trim();
+        const err=document.getElementById(id+"Error");
+        if(!isPhone(v)){ err.textContent="Enter valid phone (123-456-7890)"; valid=false; } else err.textContent="";
+    });
+
+    ["email1","email2"].forEach(id=>{
+        const v=document.getElementById(id).value.trim();
+        const err=document.getElementById(id+"Error");
+        if(v && !isEmailValid(v)){ err.textContent="Email must end with .com, .org, or .edu"; valid=false; } else err.textContent="";
+    });
+
+    if(!valid) return;
+
+    const childData = { Name: document.getElementById("childName").value.trim(), Age: parseInt(ageInput.value) };
 
     fetch("/submit",{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(data)
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ Children:[childData] })
     })
-    .then(res=>{
-        if(!res.ok) return res.json().then(err=>{throw err;});
-        return res.json();
-    })
-    .then(res=>{
-        assignedLevel.textContent="Assigned Level: "+res.level;
-        ageMessage.textContent="";
-        form.reset();
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.error){ alert(data.error); return; }
+        assignedLevel.textContent="Assigned Level: "+data.level;
+        successMessage.style.display="block";
+        setTimeout(()=>{ successMessage.style.display="none"; },4000);
+        document.getElementById("registrationForm").reset();
         ageInput.value="";
-    })
-    .catch(err=>{
-        ageMessage.textContent=err.message || "Error submitting form";
         assignedLevel.textContent="";
-    });
+    })
+    .catch(err=>{ console.error(err); alert("Error submitting form. Try again."); });
 });
 </script>
 

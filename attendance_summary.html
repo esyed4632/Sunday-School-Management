@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Attendance Summary</title>
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:20px; }
+h1 { background:#00695c; color:white; padding:10px; }
+.section { background:white; padding:15px; border-radius:5px; margin-top:20px; }
+table { width:100%; border-collapse:collapse; margin-top:15px; }
+th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+th { background:#e0f2f1; }
+.summary { font-weight:bold; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<h1>Attendance Summary</h1>
+
+<a href="/dashboard">⬅ Back</a> |
+<a href="/attendance">📋 Attendance</a>
+
+<div class="section">
+<form method="get">
+<label><strong>Select Child:</strong></label>
+<select name="child" onchange="this.form.submit()">
+<option value="">-- Select --</option>
+{% for c in children %}
+<option value="{{ c }}" {% if c == selected %}selected{% endif %}>
+{{ c }}
+</option>
+{% endfor %}
+</select>
+</form>
+
+{% if selected %}
+<div class="summary">
+<p>Present: {{ present }}</p>
+<p>Absent: {{ absent }}</p>
+<p>Total Records: {{ present + absent }}</p>
+</div>
+
+<table>
+<tr>
+<th>Date</th>
+<th>Level</th>
+<th>Status</th>
+</tr>
+{% for r in records %}
+<tr>
+<td>{{ r.date }}</td>
+<td>{{ r.level }}</td>
+<td>{{ r.status }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+</div>
+
+</body>
+</html>

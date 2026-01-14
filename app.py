@@ -1,62 +1,110 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, Response
+import datetime
+import csv
+import io
 
 app = Flask(__name__)
+app.secret_key = "supersecretkey"
 
-# Level lists
-level_1 = []
-level_2 = []
-level_3 = []
-level_4 = []
-level_5 = []
-level_6 = []
-level_7 = []
-level_8 = []
-level_9 = []
+# -----------------------------
+# In-memory storage
+# -----------------------------
+levels = {
+    "Level 1": [],
+    "Level 2": [],
+    "Level 3": [],
+    "Level 4": [],
+    "Level 5": [],
+    "Level 6": [],
+    "Level 7": []
+}
 
-def assign_level(age, name):
-    if age == 5: level_1.append(name); return "Level 1"
-    if age == 6: level_2.append(name); return "Level 2"
-    if age == 7: level_3.append(name); return "Level 3"
-    if age == 8: level_4.append(name); return "Level 4"
-    if age == 9: level_5.append(name); return "Level 5"
-    if age == 10: level_6.append(name); return "Level 6"
-    if age == 11: level_7.append(name); return "Level 7"
-    if age == 12: level_8.append(name); return "Level 8"
-    if age == 13: level_9.append(name); return "Level 9"
-    return None
+attendance_records = {}  # For storing attendance by date, level, student
 
-@app.route("/")
-def index():
-    return render_template("register.html")
+STAFF_USER = "admin"
+STAFF_PASS = "password123"
 
-@app.route("/submit", methods=["POST"])
-def submit():
+# -----------------------------
+# Staff login/logout
+# -----------------------------
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        if request.form.get("username") == STAFF_USER and request.form.get("password") == STAFF_PASS:
+            session["staff"] = True
+            return redirect(url_for("dashboard"))
+        else:
+            error = "Invalid username or password"
+    return render_template("login.html", error=error)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+# -----------------------------
+# Staff dashboard
+# -----------------------------
+@app.route("/dashboard")
+def dashboard():
+    if not session.get("staff"):
+        return redirect(url_for("login"))
+    return render_template("dashboard.html", levels=levels)
+
+# -----------------------------
+# Attendance page
+# -----------------------------
+@app.route("/attendance")
+def attendance():
+    if not session.get("staff"):
+        return redirect(url_for("login"))
+    today = datetime.date.today().isoformat()
+    return render_template("attendance.html", levels=levels, today=today)
+
+# -----------------------------
+# Save attendance
+# -----------------------------
+@app.route("/attendance/save", methods=["POST"])
+def save_attendance():
+    if not session.get("staff"):
+        return jsonify({"error": "Unauthorized"}), 403
     data = request.get_json()
-    child = data["Children"][0]
-    name = child["Name"]
-    age = int(child["Age"])
+    date = data.get("date")
+    level = data.get("level")
+    records = data.get("records", {})
 
-    if age < 5:
-        return jsonify({"message":"Too Young — cannot apply"}), 400
-    if age > 13:
-        return jsonify({"message":"Too Old — too late"}), 400
+    if date not in attendance_records:
+        attendance_records[date] = {}
+    if level not in attendance_records[date]:
+        attendance_records[date][level] = {}
+    attendance_records[date][level].update(records)
 
-    level = assign_level(age, name)
-    return jsonify({"message":"Registration successful","level": level})
+    return jsonify({"status": "success"})
 
-@app.route("/view")
-def view_levels():
-    return render_template("view.html", levels={
-        "Level 1": level_1,
-        "Level 2": level_2,
-        "Level 3": level_3,
-        "Level 4": level_4,
-        "Level 5": level_5,
-        "Level 6": level_6,
-        "Level 7": level_7,
-        "Level 8": level_8,
-        "Level 9": level_9
-    })
+# -----------------------------
+# Export attendance CSV
+# -----------------------------
+@app.route("/attendance/export")
+def attendance_export():
+    if not session.get("staff"):
+        return redirect(url_for("login"))
 
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Level", "Student", "Status"])
+
+    for date, levels_data in attendance_records.items():
+        for level, students in levels_data.items():
+            for student, status in students.items():
+                writer.writerow([date, level, student, status])
+
+    output.seek(0)
+    return Response(output, mimetype="text/csv",
+                    headers={"Content-Disposition":"attachment;filename=attendance.csv"})
+
+# -----------------------------
+# Run the app
+# -----------------------------
 if __name__ == "__main__":
     app.run(debug=True)

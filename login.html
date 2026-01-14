@@ -1,50 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Staff Login</title>
-<style>
-body { font-family: Arial; background:#f4f4f4; padding:50px; }
-.card {
-    background:white;
-    padding:30px;
-    max-width:400px;
-    margin:auto;
-    border-radius:6px;
-    box-shadow:0 2px 5px rgba(0,0,0,0.2);
-}
-h2 { text-align:center; color:#00695c; }
-label { display:block; margin-top:15px; }
-input { width:100%; padding:8px; margin-top:5px; }
-button {
-    margin-top:20px;
-    padding:10px;
-    width:100%;
-    background:#00695c;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-.error { color:red; margin-top:10px; text-align:center; }
-</style>
+    <meta charset="UTF-8">
+    <title>Staff Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-card {
+            background: white;
+            padding: 30px;
+            width: 320px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .login-card h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1f2f3a;
+        }
+
+        .error {
+            background: #ffe0e0;
+            color: #b00020;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
 
-<div class="card">
-<h2>Authorized Staff Login</h2>
+<div class="login-card">
+    <h2>Staff Login</h2>
 
-<form method="POST">
-<label>Username</label>
-<input type="text" name="username" required>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
 
-<label>Password</label>
-<input type="password" name="password" required>
+    <form method="POST">
+        <label>Username</label>
+        <input type="text" name="username" required>
 
-<button type="submit">Login</button>
-</form>
+        <label>Password</label>
+        <input type="password" name="password" required>
 
-{% if error %}
-<p class="error">{{ error }}</p>
-{% endif %}
+        <button type="submit">Log In</button>
+    </form>
+
+    <div class="footer">
+        Authorized staff only
+    </div>
 </div>
 
 </body>
